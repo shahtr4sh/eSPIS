@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\KpiPis\Pages;
 
 use App\Filament\Resources\KpiPis\KpiPiResource;
-use Filament\Actions\CreateAction;
+use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
 class ListKpiPis extends ListRecords
@@ -13,7 +13,7 @@ class ListKpiPis extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            Actions\CreateAction::make(),
         ];
     }
 }

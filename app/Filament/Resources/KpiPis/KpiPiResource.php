@@ -1,107 +1,172 @@
 <?php
-namespace App\Filament\Resources;
+
+namespace App\Filament\Resources\KpiPis;
 
 use App\Filament\Resources\KpiPis\Pages;
 use App\Models\KpiPi;
-use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Actions;
-use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\FileUpload;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Tables\Table;
+use Filament\Tables;
+use Filament\Actions;
 use Filament\Tables\Columns\TextColumn;
-use Illuminate\Support\Facades\Auth;
 
 class KpiPiResource extends Resource
 {
     protected static ?string $model = KpiPi::class;
 
-    protected static string|null|\BackedEnum $navigationIcon = 'heroicon-o-chart-bar';
-    protected static string|null|\UnitEnum $navigationGroup = 'UniSHAMS KPI/PI';
-    protected static ?string $navigationLabel = 'KPI / PI Master';
+    protected static string|null|\BackedEnum $navigationIcon = 'heroicon-o-document-text';
+    protected static string|null|\UnitEnum $navigationGroup = 'eSPIS Management';
+    protected static ?string $navigationLabel = 'KPI / PI';
+    protected static ?string $modelLabel = 'KPI / PI';
+    protected static ?string $pluralModelLabel = 'KPI / PI';
 
-    public static function schema(Schema $schema): Schema
+    public static function form(Schema $schema): Schema
     {
-        return $schema->schema([
-            TextInput::make('code')
-                ->label('KPI/PI Code')
-                ->required()
-                ->unique(ignoreRecord: true)
-                ->maxLength(255),
+        return $schema->components([
+            Section::make('Maklumat KPI / PI')
+                ->schema([
+                    Grid::make(3)->schema([
+                        TextInput::make('code')
+                            ->label('Code')
+                            ->required()
+                            ->maxLength(255)
+                            ->unique(ignoreRecord: true),
 
-            Select::make('type')
-                ->options([
-                    'KPI' => 'KPI',
-                    'PI'  => 'PI',
-                ])
-                ->required(),
+                        Select::make('type')
+                            ->label('Type')
+                            ->options([
+                                'KPI' => 'KPI',
+                                'PI' => 'PI',
+                            ])
+                            ->required(),
 
-            TextInput::make('thrust')
-                ->label('Thrust / Strategic Theme'),
+                        TextInput::make('thrust')
+                            ->label('Thrust')
+                            ->numeric()
+                            ->nullable(),
+                    ]),
 
-            TextInput::make('prime_objective')
-                ->required()
-                ->maxLength(255),
+                    Grid::make(2)->schema([
+                        Select::make('dimension')
+                            ->label('Dimension')
+                            ->required()
+                            ->options([
+                                'KECEMERLANGAN AKADEMIK DAN PENGANTARABANGSAAN' => 'KECEMERLANGAN AKADEMIK DAN PENGANTARABANGSAAN',
+                                'MEMPERKASAKAN PENYELIDIKAN DAN PENERBITAN BERIMPAK TINGGI' => 'MEMPERKASAKAN PENYELIDIKAN DAN PENERBITAN BERIMPAK TINGGI',
+                                'KECEMERLANGAN PELAJAR SECARA HOLISTIK' => 'KECEMERLANGAN PELAJAR SECARA HOLISTIK',
+                                'KELESTARIAN INSTITUSI' => 'KELESTARIAN INSTITUSI',
+                                'KEMAMPANAN KEWANGAN DAN SUMBER PENDAPATAN' => 'KEMAMPANAN KEWANGAN DAN SUMBER PENDAPATAN',
+                                'TADBIR URUS YANG BAIK' => 'TADBIR URUS YANG BAIK',
+                            ]),
 
-            Textarea::make('strategy')
-                ->required()
-                ->rows(3),
+                        TextInput::make('indicator')
+                            ->label('Indicator')
+                            ->maxLength(255)
+                            ->nullable(),
+                    ]),
 
-            TextInput::make('dimension')
-                ->required()
-                ->maxLength(255),
+                    TextInput::make('prime_objective')
+                        ->label('Prime Objective')
+                        ->maxLength(255)
+                        ->nullable(),
 
-            TextInput::make('title')
-                ->label('KPI/PI Title')
-                ->required()
-                ->maxLength(255),
+                    Textarea::make('strategy')
+                        ->label('Strategy')
+                        ->maxLength(255)
+                        ->nullable(),
 
-            TextInput::make('reference')
-                ->maxLength(255),
+                    TextInput::make('reference')
+                        ->label('Reference')
+                        ->maxLength(255)
+                        ->nullable(),
 
-            Textarea::make('operational_definition')
-                ->rows(4),
+                    Textarea::make('operational_definition')
+                        ->label('Operational Definition')
+                        ->rows(8)
+                        ->nullable(),
+                ]),
 
-            Select::make('data_source_id')
-                ->relationship('dataSource', 'name')
-                ->searchable()
-                ->preload()
-                ->label('Source of Data'),
+            Section::make('Sumber dan Tanggungjawab')
+                ->schema([
+                    Grid::make(3)->schema([
+                        Select::make('data_source_id')
+                            ->label('Source of Data')
+                            ->relationship('dataSource', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->nullable(),
 
-            TextInput::make('distribution_type')
-                ->label('Distribution Type'),
+                        Select::make('responsible_office_id')
+                            ->label('Responsible Office')
+                            ->relationship('responsibleOffice', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->nullable(),
 
-            Select::make('responsible_office_id')
-                ->relationship('office', 'name')
-                ->searchable()
-                ->preload()
-                ->label('Responsible Office'),
+                        TextArea::make('distribution_type')
+                            ->label('Distribution Type')
+                            ->rows(3)
+                            ->nullable(),
+                    ]),
 
-            TextInput::make('baseline_value')
-                ->numeric(),
+                    Grid::make(3)->schema([
+                        TextInput::make('measurement')
+                            ->label('Measurement')
+                            ->maxLength(50)
+                            ->nullable(),
 
-            TextInput::make('annual_target')
-                ->numeric(),
+                        TextInput::make('baseline_value')
+                            ->label('Baseline Value')
+                            ->numeric()
+                            ->nullable(),
+                    ]),
 
-            Select::make('status')
-                ->options([
-                    'Draft' => 'Draft',
-                    'Active' => 'Active',
-                    'Inactive' => 'Inactive',
-                ])
-                ->default('Draft')
-                ->required(),
+                    Select::make('status')
+                        ->label('Status')
+                        ->options([
+                            'Draft' => 'Draft',
+                            'Active' => 'Active',
+                            'Inactive' => 'Inactive',
+                        ])
+                        ->default('Draft')
+                        ->required(),
+                ]),
 
-            Textarea::make('remarks')
-                ->rows(3),
+            Section::make('Prestasi Suku Tahunan')
+                ->schema([
+                    Grid::make(4)->schema([
+                        TextInput::make('sasaran_q1')->label('Sasaran Q1')->numeric()->nullable(),
+                        TextInput::make('pencapaian_q1')->label('Pencapaian Q1')->numeric()->nullable(),
+                        TextInput::make('sasaran_q2')->label('Sasaran Q2')->numeric()->nullable(),
+                        TextInput::make('pencapaian_q2')->label('Pencapaian Q2')->numeric()->nullable(),
+                        TextInput::make('sasaran_q3')->label('Sasaran Q3')->numeric()->nullable(),
+                        TextInput::make('pencapaian_q3')->label('Pencapaian Q3')->numeric()->nullable(),
+                        TextInput::make('sasaran_q4')->label('Sasaran Q4')->numeric()->nullable(),
+                        TextInput::make('pencapaian_q4')->label('Pencapaian Q4')->numeric()->nullable(),
+                    ]),
 
-            FileUpload::make('attachment_path')
-                ->directory('kpi-attachments')
-                ->label('Supporting Document'),
+                    Grid::make(2)->schema([
+                        TextInput::make('sasaran_tahunan')->label('Sasaran Tahunan')->numeric()->nullable(),
+                        TextInput::make('pencapaian_tahunan')->label('Pencapaian Tahunan')->numeric()->nullable(),
+                    ]),
+                ]),
+
+            Section::make('Lampiran')
+                ->schema([
+                    FileUpload::make('attachment_path')
+                        ->label('Attachment')
+                        ->directory('kpi-pi-attachments')
+                        ->preserveFilenames()
+                        ->nullable(),
+                ]),
         ]);
     }
 
@@ -109,13 +174,28 @@ class KpiPiResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('code')->searchable()->sortable(),
-                TextColumn::make('type')->badge(),
-                TextColumn::make('title')->searchable()->wrap(),
-                TextColumn::make('dimension')->searchable(),
-                TextColumn::make('office.name')->label('Responsible Office')->searchable(),
-                TextColumn::make('status')->badge(),
-                TextColumn::make('created_at')->dateTime('d/m/Y H:i'),
+                TextColumn::make('code')
+                    ->label('Code')
+                    ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('type')
+                    ->label('Type')
+                    ->badge(),
+
+                TextColumn::make('indicator')
+                    ->label('Indicator')
+                    ->searchable()
+                    ->wrap()
+                    ->limit(50),
+
+                TextColumn::make('thrust')
+                    ->label('Thrust')
+                    ->sortable(),
+
+                TextColumn::make('status')
+                    ->label('Status')
+                    ->badge(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('type')
@@ -123,6 +203,7 @@ class KpiPiResource extends Resource
                         'KPI' => 'KPI',
                         'PI' => 'PI',
                     ]),
+
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
                         'Draft' => 'Draft',
@@ -133,24 +214,12 @@ class KpiPiResource extends Resource
             ->actions([
                 Actions\ViewAction::make(),
                 Actions\EditAction::make(),
-                Actions\DeleteAction::make(),
             ]);
-            /*->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
-            ]);*/
     }
 
-    public static function mutateFormDataBeforeCreate(array $data): array
+    public static function getRelations(): array
     {
-        $data['created_by'] = Auth::id();
-        $data['updated_by'] = Auth::id();
-        return $data;
-    }
-
-    public static function mutateFormDataBeforeSave(array $data): array
-    {
-        $data['updated_by'] = Auth::id();
-        return $data;
+        return [];
     }
 
     public static function getPages(): array
