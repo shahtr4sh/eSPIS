@@ -25,7 +25,6 @@ return new class extends Migration
             $table->foreignId('data_source_id')->nullable()->constrained('data_sources')->nullOnDelete();
             $table->string('distribution_type')->nullable();
             $table->foreignId('responsible_office_id')->nullable()->constrained('responsible_offices')->nullOnDelete();
-            $table->decimal('baseline_value', 15, 2)->nullable();
             $table->text('remarks')->nullable();
             $table->string('status')->default('Draft');
             $table->string('attachment_path')->nullable();

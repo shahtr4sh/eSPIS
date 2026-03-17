@@ -12,7 +12,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\FileUpload;
-use Filament\Infolists\Components\TextEntry;
+use Filament\Forms\Components\Repeater;
 use Filament\Tables\Table;
 use Filament\Tables;
 use Filament\Actions;
@@ -65,13 +65,20 @@ class KpiPiResource extends Resource
                                 'KELESTARIAN INSTITUSI' => 'KELESTARIAN INSTITUSI',
                                 'KEMAMPANAN KEWANGAN DAN SUMBER PENDAPATAN' => 'KEMAMPANAN KEWANGAN DAN SUMBER PENDAPATAN',
                                 'TADBIR URUS YANG BAIK' => 'TADBIR URUS YANG BAIK',
-                            ]),
+                            ])
+                            ->searchable(),
 
-                        TextInput::make('indicator')
+                        TextArea::make('indicator')
                             ->label('Indicator')
                             ->maxLength(255)
-                            ->nullable(),
+                            ->nullable()
+                            ->rows(3),
                     ]),
+
+                    TextInput::make('title')
+                        ->label('Title')
+                        ->maxLength(255)
+                        ->nullable(),
 
                     TextInput::make('prime_objective')
                         ->label('Prime Objective')
@@ -80,7 +87,7 @@ class KpiPiResource extends Resource
 
                     Textarea::make('strategy')
                         ->label('Strategy')
-                        ->maxLength(255)
+                        ->rows(4)
                         ->nullable(),
 
                     TextInput::make('reference')
@@ -111,11 +118,18 @@ class KpiPiResource extends Resource
                             ->preload()
                             ->nullable(),
 
-                        TextArea::make('distribution_type')
-                            ->label('Distribution Type')
-                            ->rows(3)
-                            ->nullable(),
+                        Select::make('status')
+                            ->label('Status')
+                            ->options([
+                                'Draft' => 'Draft',
+                                'Active' => 'Active',
+                                'Inactive' => 'Inactive',
+                            ])
+                            ->default('Draft')
+                            ->required(),
+
                     ]),
+
 
                     Grid::make(3)->schema([
                         TextInput::make('measurement')
@@ -123,24 +137,15 @@ class KpiPiResource extends Resource
                             ->maxLength(50)
                             ->nullable(),
 
-                        TextInput::make('baseline_value')
-                            ->label('Baseline Value')
-                            ->numeric()
-                            ->nullable(),
+                        TextInput::make('status')
+                            ->label('Status')
+                            ->hidden(),
                     ]),
 
-                    Select::make('status')
-                        ->label('Status')
-                        ->options([
-                            'Draft' => 'Draft',
-                            'Active' => 'Active',
-                            'Inactive' => 'Inactive',
-                        ])
-                        ->default('Draft')
-                        ->required(),
+
                 ]),
 
-            Section::make('Prestasi Suku Tahunan')
+            Section::make('Prestasi Suku Tahunan Keseluruhan')
                 ->schema([
                     Grid::make(4)->schema([
                         TextInput::make('sasaran_q1')->label('Sasaran Q1')->numeric()->nullable(),
@@ -158,6 +163,76 @@ class KpiPiResource extends Resource
                         TextInput::make('pencapaian_tahunan')->label('Pencapaian Tahunan')->numeric()->nullable(),
                     ]),
                 ]),
+
+            Section::make('Weight Distribution by Unit')
+                ->description('Masukkan weight bagi setiap unit. Contoh: KUBRA = 8, KWISH = 4, KSU = 8.')
+                ->schema([
+                    Repeater::make('distributionWeights')
+                        ->relationship('distributionWeights')
+                        ->label('Distribution Weights')
+                        ->schema([
+                            Grid::make(2)->schema([
+                                Select::make('distribution_unit_id')
+                                    ->label('Unit')
+                                    ->relationship('distributionUnit', 'code')
+                                    ->searchable()
+                                    ->preload()
+                                    ->required(),
+
+                                TextInput::make('weight_value')
+                                    ->label('%Distribute / Weight')
+                                    ->numeric()
+                                    ->required(),
+                            ]),
+                        ])
+                        ->defaultItems(0)
+                        ->addActionLabel('Add Weight')
+                        ->reorderable(false)
+                        ->collapsible()
+                        ->cloneable(false)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('Quarter Achievement by Unit')
+                ->description('Masukkan pencapaian sebenar setiap unit mengikut quarter.')
+                ->schema([
+                    Repeater::make('distributionQuarterAchievements')
+                        ->relationship('distributionQuarterAchievements')
+                        ->label('Quarter Achievements')
+                        ->schema([
+                            Grid::make(3)->schema([
+                                Select::make('quarter')
+                                    ->label('Quarter')
+                                    ->options([
+                                        'Q1' => 'Q1',
+                                        'Q2' => 'Q2',
+                                        'Q3' => 'Q3',
+                                        'Q4' => 'Q4',
+                                    ])
+                                    ->required(),
+
+                                Select::make('distribution_unit_id')
+                                    ->label('Unit')
+                                    ->relationship('distributionUnit', 'code')
+                                    ->searchable()
+                                    ->preload()
+                                    ->required(),
+
+                                TextInput::make('achievement_value')
+                                    ->label('Achievement Value')
+                                    ->numeric()
+                                    ->nullable(),
+                            ]),
+                        ])
+                        ->defaultItems(0)
+                        ->addActionLabel('Add Quarter Achievement')
+                        ->reorderable(false)
+                        ->collapsible()
+                        ->cloneable(false)
+                        ->columnSpanFull(),
+                ]),
+
+
 
             Section::make('Lampiran')
                 ->schema([
@@ -182,6 +257,12 @@ class KpiPiResource extends Resource
                 TextColumn::make('type')
                     ->label('Type')
                     ->badge(),
+
+                TextColumn::make('dimension')
+                    ->label('Dimension')
+                    ->searchable()
+                    ->wrap()
+                    ->limit(50),
 
                 TextColumn::make('indicator')
                     ->label('Indicator')

@@ -13,6 +13,7 @@ class KpiPi extends Model
 
     protected $fillable = [
         'code',
+        'dimension',
         'type',
         'thrust',
         'title',
@@ -22,10 +23,9 @@ class KpiPi extends Model
         'reference',
         'operational_definition',
         'data_source_id',
-        'distribution_type',
         'status',
         'responsible_office_id',
-        'baseline_value',
+        'annual_target',
         'measurement',
         'attachment_path',
         'created_by',
@@ -43,7 +43,7 @@ class KpiPi extends Model
     ];
 
     protected $casts = [
-        'baseline_value' => 'decimal:2',
+        'annual_target' => 'decimal:2',
         'sasaran_q1' => 'decimal:2',
         'pencapaian_q1' => 'decimal:2',
         'sasaran_q2' => 'decimal:2',
@@ -62,17 +62,6 @@ class KpiPi extends Model
         return $this->belongsTo(DataSource::class, 'data_source_id');
     }
 
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::saving(function ($model) {
-            if ($model->code) {
-                $model->dimension = substr($model->code, 0, 4);
-            }
-        });
-    }
-
     public function responsibleOffice()
     {
         return $this->belongsTo(ResponsibleOffice::class, 'responsible_office_id');
@@ -86,5 +75,20 @@ class KpiPi extends Model
     public function updater()
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function distributionWeights()
+    {
+        return $this->hasMany(KpiPiDistributionWeight::class, 'kpi_pi_id');
+    }
+
+    public function distributionQuarterAchievements()
+    {
+        return $this->hasMany(KpiPiDistributionQuarterAchievement::class, 'kpi_pi_id');
+    }
+
+    public function getTotalWeightAttribute(): float
+    {
+        return (float) $this->distributionWeights()->sum('weight_value');
     }
 }

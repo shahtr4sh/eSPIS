@@ -22,10 +22,13 @@ class KpiReporting extends Page
     protected string $view = 'filament.pages.kpi-reporting';
 
     public ?string $year = null;
-    public ?string $quarter = 'ANNUAL';
+    public ?string $quarter = 'Q1';
     public ?string $type = null;
     public ?string $responsible_office_id = null;
     public ?string $dimension = null;
+
+    public ?string $target_value_filter = null;
+    public ?string $thrust_filter= null;
     public ?string $data_source_id = null;
     public ?string $distribution_type = null;
     public bool $missing_only = false;
@@ -58,15 +61,14 @@ class KpiReporting extends Page
                             ->live(),
 
                         Select::make('quarter')
-                            ->label('Period')
+                            ->label('Quarter')
                             ->options([
-                                'ANNUAL' => 'Annual',
                                 'Q1' => 'Q1',
                                 'Q2' => 'Q2',
                                 'Q3' => 'Q3',
                                 'Q4' => 'Q4',
                             ])
-                            ->default('ANNUAL')
+                            ->default('Q1')
                             ->live(),
 
                         Select::make('type')
@@ -97,22 +99,31 @@ class KpiReporting extends Page
                             ->searchable()
                             ->live(),
 
+                        Select::make('target_value_filter')
+                            ->label('Target Value')
+                            ->options([
+                                'has_target' => 'Has Target Value',
+                                'no_target' => 'No Target Value',
+                            ])
+                            ->placeholder('All')
+                            ->live(),
+
+                        Select::make('thrust_filter')
+                            ->label('Thrust')
+                            ->options([
+                                '1' => '1',
+                                '2' => '2',
+                                '3' => '3',
+                                '4' => '4',
+                                '5' => '5',
+                                '6' => '6',
+                            ])
+                            ->placeholder('All')
+                            ->live(),
+
                         Select::make('data_source_id')
                             ->label('Source of Data')
                             ->options(DataSource::query()->pluck('name', 'id')->toArray())
-                            ->placeholder('All')
-                            ->searchable()
-                            ->live(),
-
-                        Select::make('distribution_type')
-                            ->options(
-                                KpiPi::query()
-                                    ->whereNotNull('distribution_type')
-                                    ->distinct()
-                                    ->orderBy('distribution_type')
-                                    ->pluck('distribution_type', 'distribution_type')
-                                    ->toArray()
-                            )
                             ->placeholder('All')
                             ->searchable()
                             ->live(),
@@ -140,8 +151,9 @@ class KpiReporting extends Page
             'type' => $this->type,
             'responsible_office_id' => $this->responsible_office_id,
             'dimension' => $this->dimension,
+            'target_value_filter' => $this->target_value_filter,
+            'thrust_filter' => $this->thrust_filter,
             'data_source_id' => $this->data_source_id,
-            'distribution_type' => $this->distribution_type,
             'missing_only' => $this->missing_only,
         ]);
 

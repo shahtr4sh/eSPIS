@@ -1,4 +1,7 @@
 <x-filament-panels::page>
+    @php
+        $selectedQuarter = $quarter ?? $this->quarter ?? 'Q1';
+    @endphp
     <style>
         .report-page {
             display: flex;
@@ -18,6 +21,11 @@
             border-radius: 14px;
             padding: 1rem 1.25rem;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        }
+
+        .percent-label {
+            width: 10%;
+            text-transform: uppercase;
         }
 
         .report-card-label {
@@ -69,6 +77,7 @@
             width: 100%;
             min-width: 1100px;
             border-collapse: collapse;
+            table-layout: fixed; /* Add this for fixed column widths */
         }
 
         .report-table thead th {
@@ -81,7 +90,8 @@
             padding: 0.9rem 1rem;
             border-bottom: 1px solid #e5e7eb;
             text-align: left;
-            white-space: nowrap;
+            white-space: normal; /* Allow headers to wrap */
+            word-wrap: break-word;
         }
 
         .report-table tbody td {
@@ -90,6 +100,8 @@
             font-size: 0.94rem;
             color: #111827;
             vertical-align: top;
+            white-space: normal; /* Allow content to wrap */
+            word-wrap: break-word;
         }
 
         .report-table tbody tr:hover {
@@ -98,62 +110,31 @@
 
         .report-code {
             font-weight: 700;
-            white-space: nowrap;
-        }
-
-        .report-type {
-            white-space: nowrap;
-            font-weight: 600;
-        }
-
-        .report-title {
-            min-width: 320px;
-            max-width: 420px;
-            line-height: 1.45;
-            word-break: break-word;
+            white-space: nowrap; /* Keep code from wrapping */
         }
 
         .report-center {
             text-align: center;
-            white-space: nowrap;
+            white-space: nowrap; /* Keep numbers from wrapping */
         }
 
         .report-right {
             text-align: right;
-            white-space: nowrap;
+            white-space: nowrap; /* Keep numbers from wrapping */
             font-variant-numeric: tabular-nums;
         }
 
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 110px;
-            padding: 0.35rem 0.7rem;
-            border-radius: 999px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            white-space: nowrap;
+        .report-indicator {
+            max-width: 300px;
+            white-space: normal;
+            word-wrap: break-word;
         }
 
-        .status-achieved {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .status-underperforming {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .status-incomplete {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .status-no-target {
-            background: #e5e7eb;
-            color: #374151;
+        .report-number-cell {
+            white-space: normal !important; /* Override to allow wrapping */
+            word-wrap: break-word;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
         }
 
         .empty-state {
@@ -196,8 +177,18 @@
             </div>
 
             <div class="report-card">
-                <div class="report-card-label">Incomplete</div>
-                <div class="report-card-value">{{ $summary['incomplete'] ?? 0 }}</div>
+                <div class="report-card-label">Missing Annual Target</div>
+                <div class="report-card-value">{{ $summary['missing_annual_target'] ?? 0 }}</div>
+            </div>
+
+            <div class="report-card">
+                <div class="report-card-label">Missing {{ $selectedQuarter }} Target</div>
+                <div class="report-card-value">{{ $summary['missing_quarter_target'] ?? 0 }}</div>
+            </div>
+
+            <div class="report-card">
+                <div class="report-card-label">Missing {{ $selectedQuarter }} Achievement</div>
+                <div class="report-card-value">{{ $summary['missing_quarter_achievement'] ?? 0 }}</div>
             </div>
         </div>
 
@@ -206,7 +197,7 @@
                 <div>
                     <div class="report-panel-title">KPI / PI Report Table</div>
                     <div class="report-panel-subtitle">
-                        Quarter: {{ $quarter ?? $this->quarter ?? '-' }} |
+                        Quarter: {{ $selectedQuarter }} |
                         Year: {{ $year ?? $this->year ?? '-' }}
                     </div>
                 </div>
@@ -216,47 +207,53 @@
                 <table class="report-table">
                     <thead>
                     <tr>
-                        <th>Code</th>
-                        <th>Type</th>
-                        <th>Objective</th>
-                        <th>Dimension</th>
-                        <th>Office</th>
-                        <th>Target</th>
-                        <th>Achievement</th>
-                        <th>%</th>
-                        <th>Status</th>
+                        <th style="width: 5%;">No.</th>
+                        <th style="width: 9%;">Code</th>
+                        <th style="width: 30%;">Indicator</th>
+                        <th style="width: 8%;">Annual Target</th>
+                        <th style="width: 10%;">% Annual Completed</th>
+                        <th style="width: 8%;">{{ $selectedQuarter }} Target</th>
+                        <th style="width: 8%;">{{ $selectedQuarter }} Achievement</th>
+                        <th style="width: 9%;">Evidence</th>
                     </tr>
                     </thead>
                     <tbody>
                     @forelse($rows as $row)
-                        @php
-                            $statusClass = match ($row['status'] ?? '') {
-                                'Achieved' => 'status-achieved',
-                                'Underperforming' => 'status-underperforming',
-                                'No Target' => 'status-no-target',
-                                default => 'status-incomplete',
-                            };
-                        @endphp
-
                         <tr>
-                            <td class="report-code">{{ $row['code'] ?? '-' }}</td>
-                            <td class="report-type">{{ $row['type'] ?? '-' }}</td>
-                            <td class="report-title">{{ $row['prime_objective'] ?? '-' }}</td>
-                            <td class="report-center">{{ $row['dimension'] ?? '-' }}</td>
-                            <td>{{ $row['office'] ?? '-' }}</td>
-                            <td class="report-right">
-                                {{ is_null($row['target'] ?? null) ? '-' : number_format((float) $row['target'], 2) }}
+                            <td class="report-center">{{ $row['no'] ?? '-' }}</td>
+                            <td class="report-code">
+                                @if(!empty($row['id']))
+                                    <a href="{{ url('admin/kpi-pis/' . $row['id']) }}"
+                                       class="report-code-link"
+                                       style="color: #0000cc; text-decoration: underline;"
+                                       target="_blank">
+                                        {{ $row['code'] ?? '-' }}
+                                    </a>
+                                @else
+                                    {{ $row['code'] ?? '-' }}
+                                @endif
                             </td>
-                            <td class="report-right">
-                                {{ is_null($row['achievement'] ?? null) ? '-' : number_format((float) $row['achievement'], 2) }}
+                            <td class="report-indicator">{{ $row['indicator'] ?? '-' }}</td>
+                            <td class="report-number-cell">
+                                {{ is_null($row['annual_target'] ?? null) ? '-' : number_format((float) $row['annual_target'], 2) }}
                             </td>
-                            <td class="report-right">
-                                {{ is_null($row['percent'] ?? null) ? '-' : number_format((float) $row['percent'], 2) . '%' }}
+                            <td class="report-number-cell">
+                                {{ is_null($row['annual_completed_percent'] ?? null) ? '-' : number_format((float) $row['annual_completed_percent'], 2) . '%' }}
+                            </td>
+                            <td class="report-number-cell">
+                                {{ is_null($row['quarter_target'] ?? null) ? '-' : number_format((float) $row['quarter_target'], 2) }}
+                            </td>
+                            <td class="report-number-cell">
+                                {{ is_null($row['quarter_achievement'] ?? null) ? '-' : number_format((float) $row['quarter_achievement'], 2) }}
                             </td>
                             <td>
-                                    <span class="status-badge {{ $statusClass }}">
-                                        {{ $row['status'] ?? '-' }}
-                                    </span>
+                                @if(!empty($row['evidence']))
+                                    <a href="{{ $row['evidence'] }}" class="text-primary-600 underline" target="_blank">
+                                        View
+                                    </a>
+                                @else
+                                    -
+                                @endif
                             </td>
                         </tr>
                     @empty

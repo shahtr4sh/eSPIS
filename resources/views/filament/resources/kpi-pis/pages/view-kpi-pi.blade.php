@@ -2,17 +2,39 @@
     @php
         $record = $this->getRecord();
 
+        $units = \App\Models\DistributionUnit::orderBy('sort_order')->get();
+
+        $weightMap = $record->distributionWeights
+            ->load('distributionUnit')
+            ->keyBy(fn ($row) => $row->distributionUnit->code ?? '');
+
+        $achievementMap = $record->distributionQuarterAchievements
+            ->load('distributionUnit')
+            ->groupBy('quarter')
+            ->map(function ($items) {
+                return $items->keyBy(fn ($row) => $row->distributionUnit->code ?? '');
+            });
+
+        $totalWeight = (float) $record->distributionWeights->sum('weight_value');
+
+        $quarterTargets = [
+            'Q1' => (float) ($record->sasaran_q1 ?? 0),
+            'Q2' => (float) ($record->sasaran_q2 ?? 0),
+            'Q3' => (float) ($record->sasaran_q3 ?? 0),
+            'Q4' => (float) ($record->sasaran_q4 ?? 0),
+        ];
+
         $typeLabel = $record->type ?? '-';
         $kpiLabel = strtoupper($typeLabel) === 'PI' ? 'PI' : 'KPI';
 
         $thrustText = match((string) $record->thrust) {
-            '1' => 'THRUST 1: ACADEMIC EXCELLENCE',
-            '2' => 'THRUST 2',
-            '3' => 'THRUST 3',
-            '4' => 'THRUST 4',
-            '5' => 'THRUST 5',
-            '6' => 'THRUST 6',
-            default => 'THRUST ' . ($record->thrust ?? '-'),
+            '1' => 'TERAS 1 - KECEMERLANGAN AKADEMIK DAN PENGANTARABANGSAAN',
+            '2' => 'TERAS 2 - MEMPERKASAKAN PENYELIDIKAN DAN PENERBITAN BERIMPAK TINGGI',
+            '3' => 'TERAS 3 - KECEMERLANGAN PELAJAR SECARA HOLISTIK',
+            '4' => 'TERAS 4 - KELESTARIAN INSTITUSI',
+            '5' => 'TERAS 5 - KEMAMPANAN KEWANGAN DAN SUMBER PENDAPATAN',
+            '6' => 'TERAS 6 - TADBIR URUS YANG BAIK',
+            default => 'TERAS ' . ($record->thrust ?? '-'),
         };
     @endphp
 
@@ -79,8 +101,9 @@
             white-space: pre-line;
         }
 
-        .kpi-empty {
-            color: #666;
+        .kpi-quarters {
+            background: #6b21a8;
+            color: #fff;
         }
 
         @media (max-width: 768px) {
@@ -100,7 +123,6 @@
         <div class="kpi-sheet">
             <div class="kpi-sheet-header">
                 <div>{{ $thrustText }}</div>
-                <div>ACHIEVEMENT FOR QUARTER 1 UNTIL 31 MARCH 2026</div>
             </div>
 
             <table>
@@ -149,6 +171,63 @@
                     <td class="kpi-label">RESPONSIBLE OFFICE</td>
                     <td colspan="2">{{ $record->responsibleOffice->name ?? '-' }}</td>
                 </tr>
+            </table>
+
+            <table style="width: 100%; border-collapse: collapse; margin-top: 18px; table-layout: fixed;">
+                @foreach(['Q1','Q2','Q3','Q4'] as $quarter)
+                    <tr>
+                        <td class="kpi-quarters" colspan="{{ 1 + $units->count() }}"
+                            style="border: 1px solid #000; text-align: center; font-weight: 700; padding: 10px 8px;">
+                            {{ $quarter }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="background: #0a0a0a; border: 1px solid #000; padding: 8px;"></td>
+
+                        @foreach($units as $unit)
+                            <td class="kpi-label"
+                                style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: 700;">
+                                {{ $unit->code }}
+                            </td>
+                        @endforeach
+                    </tr>
+
+                    <tr>
+                        <td class="kpi-label"
+                            style="border: 1px solid #000; padding: 8px; font-weight: 700;">
+                            TARGET
+                        </td>
+
+                        @foreach($units as $unit)
+                            @php
+                                $weightValue = (float) ($weightMap[$unit->code]->weight_value ?? 0);
+                                $parentQuarterTarget = $quarterTargets[$quarter] ?? 0;
+
+                                $calculatedTarget = ($totalWeight > 0)
+                                    ? round($parentQuarterTarget * ($weightValue / $totalWeight), 2)
+                                    : null;
+                            @endphp
+
+                            <td style="border: 1px solid #000; padding: 8px;">
+                                {{ is_null($calculatedTarget) ? '-' : number_format($calculatedTarget, 2) }}
+                            </td>
+                        @endforeach
+                    </tr>
+
+                    <tr>
+                        <td class="kpi-label"
+                            style="border: 1px solid #000; padding: 8px; font-weight: 700;">
+                            ACHIEVEMENT
+                        </td>
+
+                        @foreach($units as $unit)
+                            <td style="border: 1px solid #000; padding: 8px;">
+                                {{ isset($achievementMap[$quarter][$unit->code]) ? number_format((float) $achievementMap[$quarter][$unit->code]->achievement_value, 2) : '-' }}
+                            </td>
+                        @endforeach
+                    </tr>
+                @endforeach
             </table>
         </div>
     </div>
