@@ -31,217 +31,235 @@ class KpiPiResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Maklumat KPI / PI')
-                ->schema([
-                    Grid::make(3)->schema([
-                        TextInput::make('code')
-                            ->label('Code')
-                            ->required()
+            Grid::make(1)->schema([
+
+                Section::make('KPI / PI Details')
+                    ->columnSpanFull()
+                    ->schema([
+                        Grid::make(3)->schema([
+                            TextInput::make('code')
+                                ->label('Code')
+                                ->required()
+                                ->maxLength(255)
+                                ->unique(ignoreRecord: true),
+
+                            Select::make('type')
+                                ->label('Type')
+                                ->options([
+                                    'KPI' => 'KPI',
+                                    'PI' => 'PI',
+                                ])
+                                ->required(),
+
+                            TextInput::make('thrust')
+                                ->label('Thrust')
+                                ->numeric()
+                                ->nullable(),
+                        ]),
+
+                        Grid::make(2)->schema([
+                            Select::make('dimension')
+                                ->label('Dimension')
+                                ->required()
+                                ->options([
+                                    'KECEMERLANGAN AKADEMIK DAN PENGANTARABANGSAAN' => 'KECEMERLANGAN AKADEMIK DAN PENGANTARABANGSAAN',
+                                    'MEMPERKASAKAN PENYELIDIKAN DAN PENERBITAN BERIMPAK TINGGI' => 'MEMPERKASAKAN PENYELIDIKAN DAN PENERBITAN BERIMPAK TINGGI',
+                                    'KECEMERLANGAN PELAJAR SECARA HOLISTIK' => 'KECEMERLANGAN PELAJAR SECARA HOLISTIK',
+                                    'KELESTARIAN INSTITUSI' => 'KELESTARIAN INSTITUSI',
+                                    'KEMAMPANAN KEWANGAN DAN SUMBER PENDAPATAN' => 'KEMAMPANAN KEWANGAN DAN SUMBER PENDAPATAN',
+                                    'TADBIR URUS YANG BAIK' => 'TADBIR URUS YANG BAIK',
+                                ])
+                                ->searchable(),
+
+                            TextArea::make('indicator')
+                                ->label('Indicator')
+                                ->maxLength(255)
+                                ->nullable()
+                                ->rows(3),
+                        ]),
+
+                        TextInput::make('title')
+                            ->label('Title')
                             ->maxLength(255)
-                            ->unique(ignoreRecord: true),
-
-                        Select::make('type')
-                            ->label('Type')
-                            ->options([
-                                'KPI' => 'KPI',
-                                'PI' => 'PI',
-                            ])
-                            ->required(),
-
-                        TextInput::make('thrust')
-                            ->label('Thrust')
-                            ->numeric()
                             ->nullable(),
-                    ]),
 
-                    Grid::make(2)->schema([
-                        Select::make('dimension')
-                            ->label('Dimension')
-                            ->required()
-                            ->options([
-                                'KECEMERLANGAN AKADEMIK DAN PENGANTARABANGSAAN' => 'KECEMERLANGAN AKADEMIK DAN PENGANTARABANGSAAN',
-                                'MEMPERKASAKAN PENYELIDIKAN DAN PENERBITAN BERIMPAK TINGGI' => 'MEMPERKASAKAN PENYELIDIKAN DAN PENERBITAN BERIMPAK TINGGI',
-                                'KECEMERLANGAN PELAJAR SECARA HOLISTIK' => 'KECEMERLANGAN PELAJAR SECARA HOLISTIK',
-                                'KELESTARIAN INSTITUSI' => 'KELESTARIAN INSTITUSI',
-                                'KEMAMPANAN KEWANGAN DAN SUMBER PENDAPATAN' => 'KEMAMPANAN KEWANGAN DAN SUMBER PENDAPATAN',
-                                'TADBIR URUS YANG BAIK' => 'TADBIR URUS YANG BAIK',
-                            ])
-                            ->searchable(),
-
-                        TextArea::make('indicator')
-                            ->label('Indicator')
+                        TextInput::make('prime_objective')
+                            ->label('Prime Objective')
                             ->maxLength(255)
-                            ->nullable()
-                            ->rows(3),
+                            ->nullable(),
+
+                        Textarea::make('strategy')
+                            ->label('Strategy')
+                            ->rows(4)
+                            ->nullable(),
+
+                        TextInput::make('reference')
+                            ->label('Reference')
+                            ->maxLength(255)
+                            ->nullable(),
+
+                        Textarea::make('operational_definition')
+                            ->label('Operational Definition')
+                            ->rows(8)
+                            ->nullable(),
                     ]),
 
-                    TextInput::make('title')
-                        ->label('Title')
-                        ->maxLength(255)
-                        ->nullable(),
+                Section::make('Source and Responsible Office')
+                    ->columnSpanFull()
+                    ->schema([
+                        Grid::make(3)->schema([
+                            Select::make('data_source_id')
+                                ->label('Source of Data')
+                                ->relationship('dataSource', 'name')
+                                ->searchable()
+                                ->preload()
+                                ->nullable(),
 
-                    TextInput::make('prime_objective')
-                        ->label('Prime Objective')
-                        ->maxLength(255)
-                        ->nullable(),
+                            Select::make('responsible_office_id')
+                                ->label('Responsible Office')
+                                ->relationship('responsibleOffice', 'name')
+                                ->searchable()
+                                ->preload()
+                                ->nullable(),
 
-                    Textarea::make('strategy')
-                        ->label('Strategy')
-                        ->rows(4)
-                        ->nullable(),
+                            Select::make('status')
+                                ->label('Status')
+                                ->options([
+                                    'Draft' => 'Draft',
+                                    'Active' => 'Active',
+                                    'Inactive' => 'Inactive',
+                                ])
+                                ->default('Draft')
+                                ->required(),
+                        ]),
 
-                    TextInput::make('reference')
-                        ->label('Reference')
-                        ->maxLength(255)
-                        ->nullable(),
+                        Grid::make(3)->schema([
+                            TextInput::make('measurement')
+                                ->label('Measurement')
+                                ->maxLength(50)
+                                ->nullable(),
 
-                    Textarea::make('operational_definition')
-                        ->label('Operational Definition')
-                        ->rows(8)
-                        ->nullable(),
-                ]),
+                            TextInput::make('status')
+                                ->label('Status')
+                                ->hidden(),
+                        ]),
+                    ]),
 
-            Section::make('Sumber dan Tanggungjawab')
-                ->schema([
-                    Grid::make(3)->schema([
-                        Select::make('data_source_id')
-                            ->label('Source of Data')
-                            ->relationship('dataSource', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->nullable(),
-
-                        Select::make('responsible_office_id')
-                            ->label('Responsible Office')
-                            ->relationship('responsibleOffice', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->nullable(),
-
-                        Select::make('status')
-                            ->label('Status')
+                Section::make('Target Input Mode')
+                    ->columnSpanFull()
+                    ->schema([
+                        Select::make('target_input_mode')
+                            ->label('Mode Sasaran')
                             ->options([
-                                'Draft' => 'Draft',
-                                'Active' => 'Active',
-                                'Inactive' => 'Inactive',
+                                'annual_overall' => 'Sasaran Tahunan Keseluruhan',
+                                'unit_quarterly' => 'Sasaran Mengikut Unit & Quarter',
                             ])
-                            ->default('Draft')
-                            ->required(),
+                            ->default('annual_overall')
+                            ->required()
+                            ->live(),
 
+                        Grid::make(2)->schema([
+                            TextInput::make('sasaran_tahunan')
+                                ->label('Sasaran Tahunan')
+                                ->numeric()
+                                ->nullable()
+                                ->visible(fn ($get) => $get('target_input_mode') === 'annual_overall'),
+
+                            TextInput::make('pencapaian_tahunan')
+                                ->label('Pencapaian Tahunan')
+                                ->numeric()
+                                ->nullable()
+                                ->visible(fn ($get) => $get('target_input_mode') === 'annual_overall'),
+                        ]),
                     ]),
 
+                Section::make('Target & Achievement by Unit and Quarter')
+                    ->columnSpanFull()
+                    ->description('Isi sasaran dan pencapaian mengikut unit dan quarter.')
+                    ->visible(fn ($get) => $get('target_input_mode') === 'unit_quarterly')
+                    ->schema([
+                        Repeater::make('distributionDetails')
+                            ->relationship('distributionDetails')
+                            ->label('Distribution Details')
+                            ->schema([
+                                Grid::make(4)->schema([
+                                    Select::make('quarter')
+                                        ->label('Quarter')
+                                        ->options([
+                                            'Q1' => 'Q1',
+                                            'Q2' => 'Q2',
+                                            'Q3' => 'Q3',
+                                            'Q4' => 'Q4',
+                                        ])
+                                        ->required(),
 
-                    Grid::make(3)->schema([
-                        TextInput::make('measurement')
-                            ->label('Measurement')
-                            ->maxLength(50)
+                                    Select::make('distribution_unit_id')
+                                        ->label('Unit')
+                                        ->relationship('distributionUnit', 'code')
+                                        ->searchable()
+                                        ->preload()
+                                        ->required(),
+
+                                    TextInput::make('target_value')
+                                        ->label('Target Value')
+                                        ->numeric()
+                                        ->nullable(),
+
+                                    TextInput::make('achievement_value')
+                                        ->label('Achievement Value')
+                                        ->numeric()
+                                        ->nullable(),
+                                ]),
+                            ])
+                            ->defaultItems(0)
+                            ->addActionLabel('Add Unit Quarter Detail')
+                            ->reorderable(false)
+                            ->collapsible()
+                            ->cloneable(false)
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('Weight Distribution by Unit')
+                    ->columnSpanFull()
+                    ->description('Masukkan weight bagi setiap unit. Contoh: KUBRA = 8, KWISH = 4, KSU = 8.')
+                    ->schema([
+                        Repeater::make('distributionWeights')
+                            ->relationship('distributionWeights')
+                            ->label('Distribution Weights')
+                            ->schema([
+                                Grid::make(2)->schema([
+                                    Select::make('distribution_unit_id')
+                                        ->label('Unit')
+                                        ->relationship('distributionUnit', 'code')
+                                        ->searchable()
+                                        ->preload()
+                                        ->required(),
+
+                                    TextInput::make('weight_value')
+                                        ->label('%Distribute / Weight')
+                                        ->numeric()
+                                        ->required(),
+                                ]),
+                            ])
+                            ->defaultItems(0)
+                            ->addActionLabel('Add Weight')
+                            ->reorderable(false)
+                            ->collapsible()
+                            ->cloneable(false)
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('Lampiran')
+                    ->columnSpanFull()
+                    ->schema([
+                        FileUpload::make('attachment_path')
+                            ->label('Attachment')
+                            ->directory('kpi-pi-attachments')
+                            ->preserveFilenames()
                             ->nullable(),
-
-                        TextInput::make('status')
-                            ->label('Status')
-                            ->hidden(),
                     ]),
 
-
-                ]),
-
-            Section::make('Prestasi Suku Tahunan Keseluruhan')
-                ->schema([
-                    Grid::make(4)->schema([
-                        TextInput::make('sasaran_q1')->label('Sasaran Q1')->numeric()->nullable(),
-                        TextInput::make('pencapaian_q1')->label('Pencapaian Q1')->numeric()->nullable(),
-                        TextInput::make('sasaran_q2')->label('Sasaran Q2')->numeric()->nullable(),
-                        TextInput::make('pencapaian_q2')->label('Pencapaian Q2')->numeric()->nullable(),
-                        TextInput::make('sasaran_q3')->label('Sasaran Q3')->numeric()->nullable(),
-                        TextInput::make('pencapaian_q3')->label('Pencapaian Q3')->numeric()->nullable(),
-                        TextInput::make('sasaran_q4')->label('Sasaran Q4')->numeric()->nullable(),
-                        TextInput::make('pencapaian_q4')->label('Pencapaian Q4')->numeric()->nullable(),
-                    ]),
-
-                    Grid::make(2)->schema([
-                        TextInput::make('sasaran_tahunan')->label('Sasaran Tahunan')->numeric()->nullable(),
-                        TextInput::make('pencapaian_tahunan')->label('Pencapaian Tahunan')->numeric()->nullable(),
-                    ]),
-                ]),
-
-            Section::make('Weight Distribution by Unit')
-                ->description('Masukkan weight bagi setiap unit. Contoh: KUBRA = 8, KWISH = 4, KSU = 8.')
-                ->schema([
-                    Repeater::make('distributionWeights')
-                        ->relationship('distributionWeights')
-                        ->label('Distribution Weights')
-                        ->schema([
-                            Grid::make(2)->schema([
-                                Select::make('distribution_unit_id')
-                                    ->label('Unit')
-                                    ->relationship('distributionUnit', 'code')
-                                    ->searchable()
-                                    ->preload()
-                                    ->required(),
-
-                                TextInput::make('weight_value')
-                                    ->label('%Distribute / Weight')
-                                    ->numeric()
-                                    ->required(),
-                            ]),
-                        ])
-                        ->defaultItems(0)
-                        ->addActionLabel('Add Weight')
-                        ->reorderable(false)
-                        ->collapsible()
-                        ->cloneable(false)
-                        ->columnSpanFull(),
-                ]),
-
-            Section::make('Quarter Achievement by Unit')
-                ->description('Masukkan pencapaian sebenar setiap unit mengikut quarter.')
-                ->schema([
-                    Repeater::make('distributionQuarterAchievements')
-                        ->relationship('distributionQuarterAchievements')
-                        ->label('Quarter Achievements')
-                        ->schema([
-                            Grid::make(3)->schema([
-                                Select::make('quarter')
-                                    ->label('Quarter')
-                                    ->options([
-                                        'Q1' => 'Q1',
-                                        'Q2' => 'Q2',
-                                        'Q3' => 'Q3',
-                                        'Q4' => 'Q4',
-                                    ])
-                                    ->required(),
-
-                                Select::make('distribution_unit_id')
-                                    ->label('Unit')
-                                    ->relationship('distributionUnit', 'code')
-                                    ->searchable()
-                                    ->preload()
-                                    ->required(),
-
-                                TextInput::make('achievement_value')
-                                    ->label('Achievement Value')
-                                    ->numeric()
-                                    ->nullable(),
-                            ]),
-                        ])
-                        ->defaultItems(0)
-                        ->addActionLabel('Add Quarter Achievement')
-                        ->reorderable(false)
-                        ->collapsible()
-                        ->cloneable(false)
-                        ->columnSpanFull(),
-                ]),
-
-
-
-            Section::make('Lampiran')
-                ->schema([
-                    FileUpload::make('attachment_path')
-                        ->label('Attachment')
-                        ->directory('kpi-pi-attachments')
-                        ->preserveFilenames()
-                        ->nullable(),
-                ]),
+            ])->columnSpanFull(),
         ]);
     }
 

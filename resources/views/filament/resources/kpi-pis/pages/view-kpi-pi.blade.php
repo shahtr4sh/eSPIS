@@ -4,25 +4,12 @@
 
         $units = \App\Models\DistributionUnit::orderBy('sort_order')->get();
 
-        $weightMap = $record->distributionWeights
-            ->load('distributionUnit')
-            ->keyBy(fn ($row) => $row->distributionUnit->code ?? '');
-
-        $achievementMap = $record->distributionQuarterAchievements
+        $detailMap = $record->distributionDetails
             ->load('distributionUnit')
             ->groupBy('quarter')
             ->map(function ($items) {
                 return $items->keyBy(fn ($row) => $row->distributionUnit->code ?? '');
             });
-
-        $totalWeight = (float) $record->distributionWeights->sum('weight_value');
-
-        $quarterTargets = [
-            'Q1' => (float) ($record->sasaran_q1 ?? 0),
-            'Q2' => (float) ($record->sasaran_q2 ?? 0),
-            'Q3' => (float) ($record->sasaran_q3 ?? 0),
-            'Q4' => (float) ($record->sasaran_q4 ?? 0),
-        ];
 
         $typeLabel = $record->type ?? '-';
         $kpiLabel = strtoupper($typeLabel) === 'PI' ? 'PI' : 'KPI';
@@ -36,6 +23,23 @@
             '6' => 'TERAS 6 - TADBIR URUS YANG BAIK',
             default => 'TERAS ' . ($record->thrust ?? '-'),
         };
+
+        $targetInputMode = $record->target_input_mode ?? 'annual_overall';
+
+        // Untuk mode unit_quarterly, annual display guna Q4 sebab cumulative
+        $annualQuarter = 'Q4';
+
+        $annualOverallTarget = $targetInputMode === 'unit_quarterly'
+            ? collect($units)->sum(function ($unit) use ($detailMap, $annualQuarter) {
+                return (float) ($detailMap[$annualQuarter][$unit->code]->target_value ?? 0);
+            })
+            : (float) ($record->sasaran_tahunan ?? 0);
+
+        $annualOverallAchievement = $targetInputMode === 'unit_quarterly'
+            ? collect($units)->sum(function ($unit) use ($detailMap, $annualQuarter) {
+                return (float) ($detailMap[$annualQuarter][$unit->code]->achievement_value ?? 0);
+            })
+            : (float) ($record->pencapaian_tahunan ?? 0);
     @endphp
 
     <style>
@@ -201,16 +205,13 @@
 
                         @foreach($units as $unit)
                             @php
-                                $weightValue = (float) ($weightMap[$unit->code]->weight_value ?? 0);
-                                $parentQuarterTarget = $quarterTargets[$quarter] ?? 0;
-
-                                $calculatedTarget = ($totalWeight > 0)
-                                    ? round($parentQuarterTarget * ($weightValue / $totalWeight), 2)
-                                    : null;
+                                $detailTarget = isset($detailMap[$quarter][$unit->code])
+                                ? (float) $detailMap[$quarter][$unit->code]->target_value
+                                : null;
                             @endphp
 
                             <td style="border: 1px solid #000; padding: 8px;">
-                                {{ is_null($calculatedTarget) ? '-' : number_format($calculatedTarget, 2) }}
+                                {{ is_null($detailTarget) ? '-' : number_format($detailTarget, 2) }}
                             </td>
                         @endforeach
                     </tr>
@@ -223,12 +224,45 @@
 
                         @foreach($units as $unit)
                             <td style="border: 1px solid #000; padding: 8px;">
-                                {{ isset($achievementMap[$quarter][$unit->code]) ? number_format((float) $achievementMap[$quarter][$unit->code]->achievement_value, 2) : '-' }}
+                                {{ isset($detailMap[$quarter][$unit->code]) ? number_format((float) $detailMap[$quarter][$unit->code]->achievement_value, 2) : '-' }}
                             </td>
                         @endforeach
                     </tr>
                 @endforeach
             </table>
+
+            <table style="width: 100%; border-collapse: collapse; margin-top: 18px; table-layout: fixed;">
+                <tr>
+                    <td class="kpi-quarters" colspan="{{ 1 + $units->count() }}"
+                        style="border: 1px solid #000; text-align: center; font-weight: 700; padding: 10px 8px;">
+                        ANNUAL
+                        @if($targetInputMode === 'unit_quarterly')
+                            (DISPLAY BASED ON Q4 CUMULATIVE)
+                        @endif
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="kpi-label"
+                        style="border: 1px solid #000; padding: 8px; font-weight: 700;">
+                        OVERALL ANNUAL TARGET
+                    </td>
+                    <td colspan="{{ $units->count() }}" style="border: 1px solid #000; padding: 8px; font-weight: 600;">
+                        {{ $annualOverallTarget > 0 ? number_format($annualOverallTarget, 2) : '-' }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="kpi-label"
+                        style="border: 1px solid #000; padding: 8px; font-weight: 700;">
+                        OVERALL ANNUAL ACHIEVEMENT
+                    </td>
+                    <td colspan="{{ $units->count() }}" style="border: 1px solid #000; padding: 8px; font-weight: 600;">
+                        {{ $annualOverallAchievement > 0 ? number_format($annualOverallAchievement, 2) : '-' }}
+                    </td>
+                </tr>
+            </table>
+
         </div>
     </div>
 </x-filament-panels::page>

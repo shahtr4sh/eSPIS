@@ -30,6 +30,7 @@ class KpiPi extends Model
         'attachment_path',
         'created_by',
         'updated_by',
+        'target_input_mode',
         'sasaran_q1',
         'pencapaian_q1',
         'sasaran_q2',
@@ -82,9 +83,15 @@ class KpiPi extends Model
         return $this->hasMany(KpiPiDistributionWeight::class, 'kpi_pi_id');
     }
 
-    public function distributionQuarterAchievements()
+//    public function distributionQuarterAchievements()
+//    {
+//        return $this->hasMany(KpiPiDistributionQuarterAchievement::class, 'kpi_pi_id');
+//    }
+
+    public function distributionDetails()
     {
-        return $this->hasMany(KpiPiDistributionQuarterAchievement::class, 'kpi_pi_id');
+        return $this->hasMany(KpiPiDistributionDetail::class, 'kpi_pi_id')
+            ->orderBy('quarter');
     }
 
     public function getTotalWeightAttribute(): float

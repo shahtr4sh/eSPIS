@@ -58,7 +58,7 @@
 
                 <div class="unit-card-body">
                     @php
-                        $achievement = $record->distributionQuarterAchievements
+                        $detail = $record->distributionDetails
                             ->where('quarter', $quarter)
                             ->where('distribution_unit_id', $unit->id)
                             ->first();
@@ -73,17 +73,17 @@
                                 type="number"
                                 step="0.01"
                                 name="{{ $fieldName }}"
-                                value="{{ $achievement->achievement_value ?? '' }}"
+                                value="{{ $detail->achievement_value ?? '' }}"
                                 placeholder="Enter value"
                                 wire:model.defer="data.{{ $fieldName }}"
                             />
                         </x-filament::input.wrapper>
                     </div>
 
-                    <!-- Hidden fields to store relationship data -->
                     <input type="hidden"
                            name="achievements[{{ $unit->id }}][{{ $quarter }}][unit_id]"
                            value="{{ $unit->id }}">
+
                     <input type="hidden"
                            name="achievements[{{ $unit->id }}][{{ $quarter }}][quarter]"
                            value="{{ $quarter }}">
@@ -92,7 +92,6 @@
         @endforeach
     </div>
 
-    <!-- Save button for this quarter -->
     <div class="mt-4 flex justify-end">
         <x-filament::button
             type="button"

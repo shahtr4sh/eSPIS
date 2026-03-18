@@ -28,6 +28,7 @@ class KpiReporting extends Page
     public ?string $dimension = null;
 
     public ?string $target_value_filter = null;
+
     public ?string $thrust_filter= null;
     public ?string $data_source_id = null;
     public ?string $distribution_type = null;
@@ -35,6 +36,7 @@ class KpiReporting extends Page
 
     public array $summary = [];
     public array $rows = [];
+    public array $detail_rows = [];
     public array $charts = [];
 
     public function mount(): void
@@ -159,6 +161,7 @@ class KpiReporting extends Page
 
         $this->summary = $result['summary'];
         $this->rows = $result['rows'];
+        $this->detail_rows = $result['detail_rows'] ?? [];
         $this->charts = $result['charts'];
     }
 
